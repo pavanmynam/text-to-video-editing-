@@ -8,7 +8,7 @@ export default function App() {
   const [activeMasterVideo, setActiveMasterVideo] = useState(null);
 
   const handleGenerateVideo = async () => {
-    if (!prompt.trim()) return alert("定యచేసి మీ వీడియో ఐడియాను టైప్ చేయండి!");
+    if (!prompt.trim()) return alert("Please enter your video idea!");
     setLoading(true);
     setVideoProject(null);
     setActiveMasterVideo(null);
@@ -22,13 +22,13 @@ export default function App() {
         scenes: [
           {
             id: 1,
-            title: "🎬 సీన్ 1: Cinematic Establishing Sequence",
+            title: "🎬 Scene 1: Cinematic Establishing Sequence",
             voiceover: `Initiating visual layout sequence for "${prompt}". High contrast rendering active.`,
             videoUrl: `https://pollinations.ai{cleanPrompt}%20cinematic%20hyperrealistic%20video%20sequence%204k%20motion%20neon%20lighting?width=1024&height=576&seed=88&enhance=true&nologo=true`
           },
           {
             id: 2,
-            title: "⚡ సీన్ 2: Ultra-Dynamic Climax Shot",
+            title: "⚡ Scene 2: Ultra-Dynamic Climax Shot",
             voiceover: "The simulation peaks as neon currents reshape the environment structure.",
             videoUrl: `https://pollinations.ai{cleanPrompt}%20slow%20motion%20drone%20shot%20highly%20detailed%20epic%20movement%20cyberpunk?width=1024&height=576&seed=77&enhance=true&nologo=true`
           }
@@ -41,7 +41,7 @@ export default function App() {
         setActiveMasterVideo(newProject.scenes[0].videoUrl);
       }
     } catch (error) {
-      alert("AI Engine లో లోపం వచ్చింది. మళ్లీ ట్రై చేయండి!");
+      alert("AI Engine error occurred. Please try again!");
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export default function App() {
               <label className="text-xs font-bold text-slate-400 tracking-wider uppercase block">
                 Prompt Studio Input
               </label>
-              <p className="text-[11px] text-slate-500">వీడియో క్రియేట్ చేయడానికి స్టోరీ లేదా ప్రాంప్ట్ రాయండి.</p>
+              <p className="text-[11px] text-slate-500">Enter a story or prompt to generate your AI video project.</p>
             </div>
 
             <textarea
@@ -102,7 +102,7 @@ export default function App() {
               <div className="border border-dashed border-slate-800 rounded-2xl p-24 text-center space-y-4 bg-slate-900/10">
                 <div className="space-y-1">
                   <h3 className="font-bold text-slate-300">Video Player Terminal Offline</h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">ప్రాంప్ట్ జనరేట్ చేసిన తర్వాత ప్లేయర్ బటన్స్ మరియు వీడియో స్క్రీన్ ఇక్కడ యాక్టిވެట్ అవుతాయి.</p>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">The theater screen and live layout timeline will activate once you generate a prompt.</p>
                 </div>
               </div>
             ) : (
@@ -111,11 +111,13 @@ export default function App() {
                 {/* MASTER CINEMATIC THEATER SCREEN */}
                 <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden p-2 shadow-2xl">
                   <div className="relative aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center">
-                    <img 
-                      src={activeMasterVideo || ''} 
-                      alt="Master Render Feed" 
-                      className="w-full h-full object-cover"
-                    />
+                    {activeMasterVideo && (
+                      <img 
+                        src={activeMasterVideo} 
+                        alt="Master Render Feed" 
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                     <div className="absolute bottom-4 left-4 bg-black/70 px-3 py-1.5 rounded-lg border border-slate-800">
                       <span className="text-[11px] font-mono tracking-wider text-slate-300">● MASTER THEATER OUTPUT</span>
                     </div>
@@ -187,5 +189,3 @@ export default function App() {
 
                         </div>
                       );
-                    })}
-                  </div>
