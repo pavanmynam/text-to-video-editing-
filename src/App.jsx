@@ -38,7 +38,7 @@ export default function App() {
       await new Promise(resolve => setTimeout(resolve, 3000));
       setVideoProject(newProject);
       
-      // Index target fixed perfectly here
+      // FIXED INDEX: Targets the first video scene tracking object safely without crashing
       if (newProject.scenes && newProject.scenes.length > 0) {
         setActiveMasterVideo(newProject.scenes[0].videoUrl);
       }
@@ -187,5 +187,3 @@ export default function App() {
                                 Send to Theater
                               </button>
                             </div>
-                          </div>
-
