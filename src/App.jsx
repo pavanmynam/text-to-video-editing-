@@ -37,7 +37,7 @@ export default function App() {
 
       await new Promise(resolve => setTimeout(resolve, 4000));
       setVideoProject(newProject);
-      setActiveMasterVideo(newProject.scenes[0].videoUrl); // Fixed here
+      setActiveMasterVideo(newProject.scenes[0].videoUrl); 
     } catch (error) {
       alert("AI Engine లో లోపం వచ్చింది. మళ్లీ ట్రై చేయండి!");
     } finally {
@@ -142,7 +142,7 @@ export default function App() {
                             <img 
                               src={scene.videoUrl} 
                               alt={scene.title} 
-                              className={`w-full h-full object-cover ${isPlaying ? 'opacity-100' : 'opacity-40'}`} 
+                              className={`w-full h-full object-cover transition-all ${isPlaying ? 'opacity-100' : 'opacity-40'}`} 
                             />
                             
                             {/* Player Control Overlay */}
@@ -150,7 +150,7 @@ export default function App() {
                               <div className="flex items-center gap-2">
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); togglePlay(scene.id); }}
-                                  className="w-8 h-8 rounded bg-slate-950 text-white flex items-center justify-center border border-slate-800 text-xs font-bold"
+                                  className="w-8 h-8 rounded bg-slate-950 text-white flex items-center justify-center border border-slate-800 text-xs font-bold hover:bg-purple-600 transition"
                                 >
                                   {isPlaying ? "‖" : "▶"}
                                 </button>
@@ -176,7 +176,7 @@ export default function App() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => setActiveMasterVideo(scene.videoUrl)}
-                                className="w-full py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-lg text-[11px] font-semibold"
+                                className="w-full py-2 bg-slate-950 hover:bg-purple-900/30 hover:text-purple-400 text-slate-300 border border-slate-800 rounded-lg text-[11px] font-semibold transition"
                               >
                                 Send to Theater
                               </button>
@@ -195,7 +195,3 @@ export default function App() {
 
         </div>
 
-      </div>
-    </div>
-  );
-}
