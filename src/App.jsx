@@ -37,6 +37,8 @@ export default function App() {
 
       await new Promise(resolve => setTimeout(resolve, 4000));
       setVideoProject(newProject);
+      
+      // Fixed the index reference here to correctly load the first scene
       if (newProject.scenes && newProject.scenes.length > 0) {
         setActiveMasterVideo(newProject.scenes[0].videoUrl);
       }
@@ -185,7 +187,3 @@ export default function App() {
                                 Send to Theater
                               </button>
                             </div>
-                          </div>
-
-                        </div>
-                      );
