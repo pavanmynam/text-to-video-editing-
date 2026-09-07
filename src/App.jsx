@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { Sparkles, Video, Play, RefreshCw, Download, Image } from 'lucide-react';
 
 export default function App() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [videoProject, setVideoProject] = useState(null);
+  const [playingState, setPlayingState] = useState({});
+  const [activeMasterVideo, setActiveMasterVideo] = useState(null);
 
   const handleGenerateVideo = async () => {
     if (!prompt.trim()) return alert("దయచేసి మీ వీడియో ఐడియాను టైప్ చేయండి!");
     setLoading(true);
     setVideoProject(null);
+    setActiveMasterVideo(null);
+    setPlayingState({});
     
     try {
       const cleanPrompt = encodeURIComponent(prompt.trim());
@@ -19,124 +22,180 @@ export default function App() {
         scenes: [
           {
             id: 1,
-            title: "Scene 1: Establishing Shot",
-            voiceover: `Opening sequence showing the epic visualization of ${prompt}.`,
-            videoUrl: `https://pollinations.ai{cleanPrompt}%20cinematic%20hyperrealistic%20video%20sequence%204k%20motion?width=1024&height=576&seed=42&enhance=true&nologo=true`
+            title: "🎬 సీన్ 1: Cinematic Establishing Sequence",
+            voiceover: `Initiating visual layout sequence for "${prompt}". High contrast rendering active.`,
+            videoUrl: `https://pollinations.ai{cleanPrompt}%20cinematic%20hyperrealistic%20video%20sequence%204k%20motion%20neon%20lighting?width=1024&height=576&seed=88&enhance=true&nologo=true`
           },
           {
             id: 2,
-            title: "Scene 2: Dynamic Action Close-up",
-            voiceover: "The movement intensifies as the core element evolves rapidly forward.",
-            videoUrl: `https://pollinations.ai{cleanPrompt}%20slow%20motion%20drone%20shot%20highly%20detailed%20epic%20movement?width=1024&height=576&seed=99&enhance=true&nologo=true`
+            title: "⚡ సీన్ 2: Ultra-Dynamic Climax Shot",
+            voiceover: "The simulation peaks as neon currents reshape the environment structure.",
+            videoUrl: `https://pollinations.ai{cleanPrompt}%20slow%20motion%20drone%20shot%20highly%20detailed%20epic%20movement%20cyberpunk?width=1024&height=576&seed=77&enhance=true&nologo=true`
           }
         ]
       };
 
-      // Simulated AI generation time delay
       await new Promise(resolve => setTimeout(resolve, 4000));
       setVideoProject(newProject);
+      setActiveMasterVideo(newProject.scenes[0].videoUrl);
     } catch (error) {
-      alert("AI Video Generation లో లోపం వచ్చింది. మళ్లీ ట్రై చేయండి!");
+      alert("AI Engine లో లోపం వచ్చింది. మళ్లీ ట్రై చేయండి!");
     } finally {
       setLoading(false);
     }
   };
 
+  const togglePlay = (id) => {
+    setPlayingState(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12 space-y-10 selection:bg-indigo-500/30">
-      {/* Glow Header */}
-      <header className="text-center space-y-3 relative">
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent flex items-center justify-center gap-3">
-          <Video className="w-12 h-12 text-indigo-400 animate-pulse" /> AI Real Text-to-Video Engine
-        </h1>
-        <p className="text-slate-400 text-base max-w-xl mx-auto">
-          మీ ఊహను టెక్స్ట్‌గా ఇవ్వండి. AI కొన్ని క్షణాల్లోనే సినిమాటిక్ వీడియో క్లిప్స్ మరియు స్క్రిప్ట్‌ను సృష్టిస్తుంది.
-        </p>
-      </header>
+    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans p-4 sm:p-8">
+      <div className="max-w-7xl mx-auto space-y-10">
+        
+        {/* Top Header Panel */}
+        <div className="flex items-center justify-between border-b border-slate-800 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-xl">▶</span>
+            </div>
+            <div>
+              <span className="text-xs font-bold font-mono tracking-widest text-indigo-400 block uppercase">Studio Engine V3.0</span>
+              <h1 className="text-xl font-black tracking-tight text-white">NEXUS STUDIO</h1>
+            </div>
+          </div>
+        </div>
 
-      {/* Input Console */}
-      <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="ఉదాహరణకు: Ancient temple hidden inside a glowing cave, waterfalls, photorealistic, 8k movie style..."
-          className="w-full h-32 bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 text-slate-100 focus:outline-none focus:border-indigo-500 resize-none placeholder:text-slate-600 text-base leading-relaxed transition"
-        />
-        <button
-          onClick={handleGenerateVideo}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2.5 disabled:opacity-40"
-        >
-          {loading ? (
-            <>
-              <RefreshCw className="w-5 h-5 animate-spin" /> 
-              <span>AI Cinematic Engine వీడియోని జనరేట్ చేస్తోంది...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" /> 
-              <span>Generate AI Video Storyboard</span>
-            </>
-          )}
-        </button>
-      </div>
+        {/* Studio Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Side Controls */}
+          <div className="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 tracking-wider uppercase block">
+                Prompt Studio Input
+              </label>
+              <p className="text-[11px] text-slate-500">వీడియో క్రియేట్ చేయడానికి స్టోరీ లేదా ప్రాంప్ట్ రాయండి.</p>
+            </div>
 
-      {/* Video Timeline Display */}
-      {videoProject && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-            <h2 className="text-2xl font-bold flex items-center gap-2.5 text-slate-200">
-              <Play className="w-6 h-6 text-pink-400 fill-pink-400/20" /> 
-              <span>Active Render Timeline</span>
-            </h2>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="e.g., Cyberpunk space base inside Saturn rings, 4k cinematic resolution..."
+              className="w-full h-40 bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-100 focus:outline-none focus:border-purple-500 resize-none text-sm leading-relaxed placeholder:text-slate-700"
+            />
+
+            <button
+              onClick={handleGenerateVideo}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:opacity-90 text-white font-bold py-4 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 text-sm"
+            >
+              {loading ? "Compiling Video Tracks..." : "Generate AI Video System"}
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {videoProject.scenes.map((scene) => (
-              <div key={scene.id} className="bg-slate-900/40 border border-slate-800/60 rounded-2xl overflow-hidden shadow-2xl flex flex-col group hover:border-slate-700 transition-all duration-300">
-                
-                {/* AI Render Frame */}
-                <div className="relative aspect-video bg-slate-950 flex items-center justify-center overflow-hidden">
-                  <img 
-                    src={scene.videoUrl} 
-                    alt={scene.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                  />
-                  <span className="absolute top-3 left-3 bg-red-600 text-[10px] uppercase tracking-wider text-white px-2.5 py-1 rounded-md font-bold animate-pulse">
-                    • AI Live Feed
-                  </span>
+          {/* Right Side Monitor Console */}
+          <div className="lg:col-span-8 space-y-6">
+            {!videoProject ? (
+              <div className="border border-dashed border-slate-800 rounded-2xl p-24 text-center space-y-4 bg-slate-900/10">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-slate-300">Video Player Terminal Offline</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">ప్రాంప్ట్ జనరేట్ చేసిన తర్వాత ప్లేయర్ బటన్స్ మరియు వీడియో స్క్రీన్ ఇక్కడ యాక్టివేట్ అవుతాయి.</p>
                 </div>
-
-                {/* Subtitles & Scripts */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-200 tracking-tight">{scene.title}</h3>
-                    <div className="mt-2 bg-slate-950/60 border border-slate-800 rounded-xl p-3">
-                      <p className="text-sm text-slate-400 italic leading-relaxed">
-                        "{scene.voiceover}"
-                      </p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                
+                {/* MASTER CINEMATIC THEATER SCREEN */}
+                <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden p-2 shadow-2xl">
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                    <img 
+                      src={activeMasterVideo} 
+                      alt="Master Render Feed" 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-4 left-4 bg-black/70 px-3 py-1.5 rounded-lg border border-slate-800">
+                      <span className="text-[11px] font-mono tracking-wider text-slate-300">● MASTER THEATER OUTPUT</span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Actions */}
-                  <div className="pt-2">
-                    <a 
-                      href={scene.videoUrl} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="w-full py-3 px-4 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white border border-indigo-500/20 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200"
-                    >
-                      <Download className="w-4 h-4" /> Open Full Video Clip
-                    </a>
+                {/* SCENE TIMELINE */}
+                <div className="space-y-4">
+                  <h2 className="text-base font-bold font-mono tracking-wider text-slate-400 uppercase">
+                    Multi-Scene Player Timeline
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {videoProject.scenes.map((scene) => {
+                      const isPlaying = playingState[scene.id] ?? true;
+
+                      return (
+                        <div 
+                          key={scene.id} 
+                          onClick={() => setActiveMasterVideo(scene.videoUrl)}
+                          className={`bg-slate-900 border rounded-xl overflow-hidden flex flex-col cursor-pointer transition-all ${activeMasterVideo === scene.videoUrl ? 'border-purple-500 bg-purple-950/10' : 'border-slate-800 hover:border-slate-700'}`}
+                        >
+                          
+                          {/* Video Frame */}
+                          <div className="relative aspect-video bg-black overflow-hidden flex items-center justify-center">
+                            <img 
+                              src={scene.videoUrl} 
+                              alt={scene.title} 
+                              className={`w-full h-full object-cover ${isPlaying ? 'opacity-100' : 'opacity-40'}`} 
+                            />
+                            
+                            {/* Player Control Overlay */}
+                            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent p-3 pt-8 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); togglePlay(scene.id); }}
+                                  className="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center border border-slate-800 text-xs font-bold"
+                                >
+                                  {isPlaying ? "‖" : "▶"}
+                                </button>
+                              </div>
+                            </div>
+
+                            <span className="absolute top-2.5 left-2.5 bg-slate-950 text-[9px] font-mono tracking-widest text-purple-400 px-2 py-0.5 rounded border border-purple-900/50">
+                              FEED_0{scene.id}
+                            </span>
+                          </div>
+
+                          {/* Info Data */}
+                          <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                            <div className="space-y-2">
+                              <h4 className="font-bold text-xs text-slate-300 tracking-tight">{scene.title}</h4>
+                              <div className="bg-slate-950 border border-slate-800 rounded-lg p-2.5">
+                                <p className="text-[11px] text-slate-400 italic leading-relaxed font-mono">
+                                  "{scene.voiceover}"
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setActiveMasterVideo(scene.videoUrl)}
+                                className="w-full py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-lg text-[11px] font-semibold"
+                              >
+                                Send to Theater
+                              </button>
+                            </div>
+                          </div>
+
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
               </div>
-            ))}
+            )}
           </div>
+
         </div>
-      )}
+
+      </div>
     </div>
   );
 }
