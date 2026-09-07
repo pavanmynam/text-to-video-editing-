@@ -150,7 +150,7 @@ export default function App() {
                               <div className="flex items-center gap-2">
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); togglePlay(scene.id); }}
-                                  className="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center border border-slate-800 text-xs font-bold"
+                                  className="w-8 h-8 rounded bg-slate-950 text-white flex items-center justify-center border border-slate-800 text-xs font-bold"
                                 >
                                   {isPlaying ? "‖" : "▶"}
                                 </button>
