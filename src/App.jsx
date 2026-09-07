@@ -37,7 +37,9 @@ export default function App() {
 
       await new Promise(resolve => setTimeout(resolve, 4000));
       setVideoProject(newProject);
-      setActiveMasterVideo(newProject.scenes[0].videoUrl); 
+      if (newProject.scenes && newProject.scenes.length > 0) {
+        setActiveMasterVideo(newProject.scenes[0].videoUrl);
+      }
     } catch (error) {
       alert("AI Engine లో లోపం వచ్చింది. మళ్లీ ట్రై చేయండి!");
     } finally {
@@ -187,15 +189,3 @@ export default function App() {
                       );
                     })}
                   </div>
-                </div>
-
-              </div>
-            )}
-          </div>
-
-        </div>
-
-      </div>
-    </div>
-  );
-}
