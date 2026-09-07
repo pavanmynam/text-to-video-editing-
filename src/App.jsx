@@ -8,7 +8,7 @@ export default function App() {
   const [activeMasterVideo, setActiveMasterVideo] = useState(null);
 
   const handleGenerateVideo = async () => {
-    if (!prompt.trim()) return alert("దయచేసి మీ వీడియో ఐడియాను టైప్ చేయండి!");
+    if (!prompt.trim()) return alert("定యచేసి మీ వీడియో ఐడియాను టైప్ చేయండి!");
     setLoading(true);
     setVideoProject(null);
     setActiveMasterVideo(null);
@@ -102,7 +102,7 @@ export default function App() {
               <div className="border border-dashed border-slate-800 rounded-2xl p-24 text-center space-y-4 bg-slate-900/10">
                 <div className="space-y-1">
                   <h3 className="font-bold text-slate-300">Video Player Terminal Offline</h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">ప్రాంప్ట్ జనరేట్ చేసిన తర్వాత ప్లేయర్ బటన్స్ మరియు వీడియో స్క్రీన్ ఇక్కడ యాక్టివేట్ అవుతాయి.</p>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">ప్రాంప్ట్ జనరేట్ చేసిన తర్వాత ప్లేయర్ బటన్స్ మరియు వీడియో స్క్రీన్ ఇక్కడ యాక్టిވެట్ అవుతాయి.</p>
                 </div>
               </div>
             ) : (
@@ -112,7 +112,7 @@ export default function App() {
                 <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden p-2 shadow-2xl">
                   <div className="relative aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center">
                     <img 
-                      src={activeMasterVideo} 
+                      src={activeMasterVideo || ''} 
                       alt="Master Render Feed" 
                       className="w-full h-full object-cover"
                     />
