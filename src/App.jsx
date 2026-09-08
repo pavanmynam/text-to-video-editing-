@@ -2,39 +2,44 @@ import { useState } from 'react'
 import { fal } from "@fal-ai/client"
 
 export default function App(){
-  const [prompt,setPrompt]=useState("cinematic drone shot of Charminar Hyderabad at sunset")
+  const [prompt,setPrompt]=useState("cinematic drone shot of Hyderabad Charminar at sunset, 4k")
   const [video,setVideo]=useState("")
   const [load,setLoad]=useState(false)
 
   const gen=async()=>{
     const KEY = import.meta.env.VITE_FAL_KEY
-    if(!KEY){ alert("KEY missing! Vercel lo add chey bro"); return }
-    if(!prompt){ alert("Prompt rayi"); return }
+    if(!KEY) return alert("Key missing bro! Vercel lo add chey")
     fal.config({ credentials: KEY })
     setLoad(true)
     setVideo("")
     try{
-      const result = await fal.subscribe("fal-ai/ltx-2/text-to-video", {
-        input: { prompt: prompt, duration: "6", resolution: "1080p" },
-        logs: true,
-        onQueueUpdate: (u) => { if(u.status==="IN_PROGRESS") console.log(u.logs) }
+      const res = await fal.subscribe("fal-ai/ltx-2/text-to-video", {
+        input: { prompt, duration: "6", resolution: "1080p" }
       })
-      console.log(result.data)
-      setVideo(result.data.video.url)
+      setVideo(res.data.video.url)
     }catch(e){
-      console.error(e)
-      alert("ERROR: " + (e.message || JSON.stringify(e).slice(0,600)))
+      alert("Error: " + e.message)
     }
     setLoad(false)
   }
 
   return(
-    <div style={{padding:30, background:'#0a0a0a', color:'white', minHeight:'100vh', fontFamily:'sans-serif'}}>
-      <h2>🎬 Pavan AI Generator ✅</h2>
-      <p>Key: {import.meta.env.VITE_FAL_KEY? "✅ Ready" : "❌ Missing"}</p>
-      <input value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="drone shot" style={{width:'360px', padding:'12px', borderRadius:'8px'}}/>
-      <button onClick={gen} style={{padding:'12px 20px', marginLeft:'10px', borderRadius:'8px'}}>{load? "Generating 30s..." : "Generate"}</button>
-      {video && <div style={{marginTop:20}}><video src={video} controls autoPlay loop style={{width:'100%', maxWidth:'600px', borderRadius:'12px'}}/><br/><a href={video} target="_blank" style={{color:'#0ff'}}>Download Video</a></div>}
+    <div style={{display:'flex', gap:'20px', padding:'20px', background:'#0a0a0a', color:'white', minHeight:'100vh', fontFamily:'sans-serif'}}>
+      {/* LEFT */}
+      <div style={{flex:1, background:'#161616', padding:'20px', borderRadius:'16px'}}>
+        <h1>🎬 Pavan AI Studio</h1>
+        <p>Key: {import.meta.env.VITE_FAL_KEY ? "✅ Ready" : "❌ Missing"}</p>
+        <textarea value={prompt} onChange={e=>setPrompt(e.target.value)} style={{width:'100%', height:'120px', padding:'12px', borderRadius:'12px', background:'#222', color:'white', border:'1px solid #333'}} placeholder="Enter prompt..."/>
+        <button onClick={gen} disabled={load} style={{marginTop:'12px', width:'100%', padding:'14px', borderRadius:'12px', background:'white', color:'black', fontWeight:'bold', cursor:'pointer'}}>
+          {load ? "Generating 30s..." : "Generate Video"}
+        </button>
+      </div>
+      {/* RIGHT - VIDEO PAKKANA */}
+      <div style={{flex:1.2, background:'#161616', padding:'20px', borderRadius:'16px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', border:'2px dashed #333'}}>
+        {!video && !load && <div style={{textAlign:'center', opacity:0.5}}><div style={{fontSize:'40px'}}>🎞️</div><p>Your video will appear here<br/>Click Generate - video pakkane vastadi</p></div>}
+        {load && <p>✨ Generating cinematic magic... 30s wait bro</p>}
+        {video && <><video src={video} controls autoPlay loop style={{width:'100%', borderRadius:'16px'}}/><a href={video} download style={{marginTop:'12px', color:'#0ff'}}>⬇️ Download Video</a></>}
+      </div>
     </div>
   )
 }
