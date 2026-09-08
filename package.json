@@ -1,5 +1,5 @@
 {
-  "name": "text-to-video-editing",
+  "name": "ai-video-generator",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,12 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "@fal-ai/client": "^1.2.0"
+    "@fal-ai/client": "^1.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.0",
-    "vite": "^5.0.4"
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
   }
 }
