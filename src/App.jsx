@@ -1,68 +1,94 @@
-import { useState } from "react"
+import { useState } from 'react'
+
+const FAL_KEY = import.meta.env.VITE_FAL_KEY;
 
 export default function App() {
-  const [prompt, setPrompt] = useState("A cinematic drone shot of Hyderabad at night")
-  const [video, setVideo] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [prompt, setPrompt] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
 
-  const generate = () => {
-    setLoading(true)
-    setTimeout(() => {
-      setVideo("https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")
-      setLoading(false)
-    }, 1200)
-  }
+  const generateVideo = async () => {
+    if(!prompt) return alert("Prompt rayyi first");
+    if(!FAL_KEY) return alert("VITE_FAL_KEY kanipinchaledu - Vercel lo redeploy cheyali");
+
+    setLoading(true);
+    setVideoUrl("");
+    setStatus("Queue lo pedutunna...");
+
+    try {
+      // 1. Submit job to Fal
+      const submitRes = await fetch("https://queue.fal.run/fal-ai/kling-video/v2.1/master/text-to-video", {
+        method: "POST",
+        headers: {
+          "Authorization": `Key ${FAL_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          duration: "5",
+          aspect_ratio: "16:9"
+        })
+      });
+
+      const { request_id } = await submitRes.json();
+      setStatus(`Generating... ID: ${request_id.slice(0,8)}`);
+
+      // 2. Poll for result
+      let result = null;
+      while(!result || result.status !== "COMPLETED") {
+        await new Promise(r => setTimeout(r, 3000));
+        const statusRes = await fetch(`https://queue.fal.run/fal-ai/kling-video/requests/${request_id}/status`, {
+          headers: { "Authorization": `Key ${FAL_KEY}` }
+        });
+        const statusData = await statusRes.json();
+        console.log(statusData);
+        if(statusData.status === "COMPLETED") {
+          const finalRes = await fetch(`https://queue.fal.run/fal-ai/kling-video/requests/${request_id}`, {
+            headers: { "Authorization": `Key ${FAL_KEY}` }
+          });
+          result = await finalRes.json();
+          break;
+        }
+        setStatus(`Status: ${statusData.status}...`);
+      }
+
+      setVideoUrl(result.data.video.url);
+      setStatus("Done! ✅");
+    } catch (e) {
+      console.error(e);
+      setStatus("Error: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div style={{minHeight:'100vh', background:'#08080a', color:'#e5e5e5', padding:16, fontFamily:'Inter, sans-serif'}}>
-      <div style={{maxWidth:1100, margin:'0 auto'}}>
-        
-        {/* Header */}
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', background:'rgba(255,255,255,0.05)', borderRadius:16, border:'1px solid rgba(255,255,255,0.1)', marginBottom:16}}>
-          <b style={{letterSpacing:1}}>PAVAN AI STUDIO PREMIUM</b>
-          <span style={{fontSize:11, background:'#22c55e22', padding:'4px 10px', borderRadius:20, border:'1px solid #22c55e55', color:'#22c55e'}}>🟢 Ready - Green Tick</span>
+    <div style={{minHeight:'100vh', background:'#0a0a0f', color:'white', padding:'30px', fontFamily:'Inter'}}>
+      <h1 style={{fontSize:'28px', fontWeight:800}}>FLI Studio <span style={{color:'#7c3aed'}}>• Text to Video</span></h1>
+      <p>{status}</p>
+      
+      <div style={{display:'grid', gridTemplateColumns:'400px 1fr', gap:'30px', marginTop:'20px'}}>
+        <div style={{background:'#1a1a23', padding:'20px', borderRadius:'16px'}}>
+          <textarea 
+            value={prompt} onChange={e=>setPrompt(e.target.value)}
+            placeholder="Ex: A cinematic drone shot of Charminar at night with lights..."
+            style={{width:'100%', height:'120px', background:'#0a0a0f', color:'white', borderRadius:'12px', padding:'12px'}}
+          />
+          <button 
+            onClick={generateVideo} disabled={loading}
+            style={{marginTop:'12px', width:'100%', padding:'14px', background:'linear-gradient(90deg,#7c3aed,#3b82f6)', border:'none', borderRadius:'12px', color:'white', fontWeight:700, cursor:'pointer'}}
+          >
+            {loading ? "Generating..." : "Generate Video 🎬"}
+          </button>
         </div>
 
-        <div style={{display:'flex', gap:16, flexWrap:'wrap'}}>
-          
-          {/* Left Panel */}
-          <div style={{flex:'1 1 340px', background:'rgba(255,255,255,0.04)', borderRadius:20, padding:20, border:'1px solid rgba(255,255,255,0.08)'}}>
-            <div style={{fontSize:10, letterSpacing:1.5, opacity:0.5, marginBottom:8}}>PROMPT</div>
-            <textarea 
-              value={prompt} 
-              onChange={e=>setPrompt(e.target.value)} 
-              style={{width:'100%', height:120, background:'#0a0a0c', color:'white', borderRadius:12, padding:12, border:'1px solid #222', outline:'none', resize:'none'}}
-            />
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:16}}>
-              <select style={{padding:10, borderRadius:10, background:'#0a0a0c', color:'white', border:'1px solid #222'}}><option>16:9</option><option>9:16</option></select>
-              <select style={{padding:10, borderRadius:10, background:'#0a0a0c', color:'white', border:'1px solid #222'}}><option>720p</option><option>1080p</option></select>
-            </div>
-            <button onClick={generate} style={{marginTop:16, width:'100%', padding:14, borderRadius:12, background:'white', color:'black', fontWeight:800, border:'none', cursor:'pointer'}}>
-              {loading ? "⏳ Generating..." : "▶ GENERATE VIDEO"}
-            </button>
-            <div style={{marginTop:12, fontSize:11, opacity:0.5, textAlign:'center'}}>Premium Design + Pakkana Video Player</div>
-          </div>
-
-          {/* Right Panel - Video */}
-          <div style={{flex:'1 1 420px', background:'rgba(255,255,255,0.04)', borderRadius:20, padding:16, border:'1px solid rgba(255,255,255,0.08)', minHeight:380, display:'grid', placeItems:'center'}}>
-            {!video && !loading && (
-              <div style={{textAlign:'center', opacity:0.4, lineHeight:1.6}}>
-                <div style={{fontSize:40}}>🎬</div>
-                <div>Your video will appear here</div>
-                <div style={{fontSize:12}}>Pakkana video vastundi</div>
-              </div>
-            )}
-            {loading && <div style={{opacity:0.8}}>⏳ Generating premium video...</div>}
-            {video && (
-              <div style={{width:'100%'}}>
-                <video src={video} controls autoPlay style={{width:'100%', borderRadius:12, background:'black'}}/>
-                <div style={{marginTop:10, display:'flex', gap:8}}>
-                  <button style={{flex:1, padding:10, borderRadius:10, background:'rgba(255,255,255,0.08)', color:'white', border:'1px solid #333', cursor:'pointer'}}>⬇ Download</button>
-                  <button style={{flex:1, padding:10, borderRadius:10, background:'white', color:'black', border:'none', fontWeight:700, cursor:'pointer'}}>✨ Enhance</button>
-                </div>
-              </div>
-            )}
-          </div>
+        <div style={{background:'#1a1a23', borderRadius:'16px', minHeight:'400px', display:'flex', alignItems:'center', justifyContent:'center'}}>
+          {videoUrl ? (
+            <video src={videoUrl} controls autoPlay loop style={{width:'100%', borderRadius:'16px'}} />
+          ) : (
+            <p style={{opacity:0.5}}>{loading ? "Video vastundi wait..." : "Ikkada video vastundi"}</p>
+          )}
         </div>
       </div>
     </div>
