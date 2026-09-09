@@ -1,96 +1,40 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import * as fal from '@fal-ai/client';
 
-const FAL_KEY = import.meta.env.VITE_FAL_KEY;
+fal.config({ credentials: import.meta.env.VITE_FAL_KEY });
 
 export default function App() {
-  const [prompt, setPrompt] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [prompt, setPrompt] = useState("A cinematic drone shot of Charminar, Hyderabad at night, neon lights");
+  const [video, setVideo] = useState("");
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("");
+  const [log, setLog] = useState("Ready");
 
-  const generateVideo = async () => {
-    if(!prompt) return alert("Prompt rayyi first");
-    if(!FAL_KEY) return alert("VITE_FAL_KEY kanipinchaledu - Vercel lo redeploy cheyali");
-
-    setLoading(true);
-    setVideoUrl("");
-    setStatus("Queue lo pedutunna...");
-
+  const generate = async () => {
+    setLoading(true); setVideo(""); setLog("Starting...");
     try {
-      // 1. Submit job to Fal
-      const submitRes = await fetch("https://queue.fal.run/fal-ai/kling-video/v2.1/master/text-to-video", {
-        method: "POST",
-        headers: {
-          "Authorization": `Key ${FAL_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          duration: "5",
-          aspect_ratio: "16:9"
-        })
+      const res = await fal.subscribe("fal-ai/kling-video/v2.1/master/text-to-video", {
+        inputs: { prompt, duration: "5", aspect_ratio: "16:9" },
+        logs: true,
+        onQueueUpdate: (u) => setLog(u.status)
       });
-
-      const { request_id } = await submitRes.json();
-      setStatus(`Generating... ID: ${request_id.slice(0,8)}`);
-
-      // 2. Poll for result
-      let result = null;
-      while(!result || result.status !== "COMPLETED") {
-        await new Promise(r => setTimeout(r, 3000));
-        const statusRes = await fetch(`https://queue.fal.run/fal-ai/kling-video/requests/${request_id}/status`, {
-          headers: { "Authorization": `Key ${FAL_KEY}` }
-        });
-        const statusData = await statusRes.json();
-        console.log(statusData);
-        if(statusData.status === "COMPLETED") {
-          const finalRes = await fetch(`https://queue.fal.run/fal-ai/kling-video/requests/${request_id}`, {
-            headers: { "Authorization": `Key ${FAL_KEY}` }
-          });
-          result = await finalRes.json();
-          break;
-        }
-        setStatus(`Status: ${statusData.status}...`);
-      }
-
-      setVideoUrl(result.data.video.url);
-      setStatus("Done! ✅");
+      setVideo(res.data.video.url);
+      setLog("Done ✅");
     } catch (e) {
+      setLog("Error: " + e.message);
       console.error(e);
-      setStatus("Error: " + e.message);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
-    <div style={{minHeight:'100vh', background:'#0a0a0f', color:'white', padding:'30px', fontFamily:'Inter'}}>
-      <h1 style={{fontSize:'28px', fontWeight:800}}>FLI Studio <span style={{color:'#7c3aed'}}>• Text to Video</span></h1>
-      <p>{status}</p>
-      
-      <div style={{display:'grid', gridTemplateColumns:'400px 1fr', gap:'30px', marginTop:'20px'}}>
-        <div style={{background:'#1a1a23', padding:'20px', borderRadius:'16px'}}>
-          <textarea 
-            value={prompt} onChange={e=>setPrompt(e.target.value)}
-            placeholder="Ex: A cinematic drone shot of Charminar at night with lights..."
-            style={{width:'100%', height:'120px', background:'#0a0a0f', color:'white', borderRadius:'12px', padding:'12px'}}
-          />
-          <button 
-            onClick={generateVideo} disabled={loading}
-            style={{marginTop:'12px', width:'100%', padding:'14px', background:'linear-gradient(90deg,#7c3aed,#3b82f6)', border:'none', borderRadius:'12px', color:'white', fontWeight:700, cursor:'pointer'}}
-          >
-            {loading ? "Generating..." : "Generate Video 🎬"}
-          </button>
-        </div>
-
-        <div style={{background:'#1a1a23', borderRadius:'16px', minHeight:'400px', display:'flex', alignItems:'center', justifyContent:'center'}}>
-          {videoUrl ? (
-            <video src={videoUrl} controls autoPlay loop style={{width:'100%', borderRadius:'16px'}} />
-          ) : (
-            <p style={{opacity:0.5}}>{loading ? "Video vastundi wait..." : "Ikkada video vastundi"}</p>
-          )}
-        </div>
-      </div>
+    <div style={{background:'#0a0a0f', minHeight:'100vh', color:'#fff', padding:20}}>
+      <h2>FLI Studio - Text to Video</h2>
+      <p style={{opacity:0.6}}>{log}</p>
+      <textarea value={prompt} onChange={e=>setPrompt(e.target.value)} style={{width:'100%', height:100, background:'#1a1a23', color:'#fff', borderRadius:12, padding:10}} />
+      <button onClick={generate} disabled={loading} style={{marginTop:10, padding:'12px 24px', background:'#7c3aed', border:'none', borderRadius:12, color:'#fff', fontWeight:700}}>
+        {loading ? 'Generating...' : 'Generate Video'}
+      </button>
+      {video && <video src={video} controls autoPlay style={{width:'100%', marginTop:20, borderRadius:16}} />}
     </div>
   )
 }
