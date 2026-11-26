@@ -1,9 +1,16 @@
+import os
+import tempfile
+
 import streamlit as st
 
 from modules.deepu_engine import analyze_script
 from modules.video_engine import (
     generate_kling_video,
     estimate_total_seconds
+)
+from modules.stitch_engine import (
+    stitch_final_video,
+    dims_for_aspect
 )
 
 # ============================================================
@@ -115,6 +122,16 @@ if "videos" not in st.session_state:
 if "generating" not in st.session_state:
 
     st.session_state.generating = False
+
+
+if "final_video_path" not in st.session_state:
+
+    st.session_state.final_video_path = None
+
+
+if "stitch_workdir" not in st.session_state:
+
+    st.session_state.stitch_workdir = None
 
 
 # ============================================================
@@ -388,6 +405,8 @@ with left:
         st.session_state.videos = {}
 
         st.session_state.generating = False
+
+        st.session_state.final_video_path = None
 
         st.rerun()
 
@@ -1018,6 +1037,106 @@ if st.session_state.plan:
 
 
     # ========================================================
+    # FINAL STITCHED VIDEO
+    # ========================================================
+
+    if st.session_state.videos:
+
+        st.divider()
+
+        st.subheader("🎬 Final Stitched Video")
+
+        ordered_urls = [
+            st.session_state.videos[scene.get("id", idx + 1)]
+            for idx, scene in enumerate(scenes)
+            if scene.get("id", idx + 1) in st.session_state.videos
+        ]
+
+        missing = len(scenes) - len(ordered_urls)
+
+        if missing > 0:
+            st.caption(
+                f"⚠️ {missing} scene(s) haven't been generated yet. "
+                "The final video below will combine only the scenes "
+                "generated so far, in the correct order."
+            )
+
+        st.caption(
+            "This downloads every generated clip, matches them to one "
+            "resolution/frame rate, and joins them into a single video. "
+            "If you uploaded a voice-over above, it replaces the clips' "
+            "own audio on the final video."
+        )
+
+        stitch_clicked = st.button(
+            "🎞️ Combine Scenes Into One Final Video",
+            type="primary",
+            use_container_width=True,
+            key="stitch_button"
+        )
+
+        if stitch_clicked:
+
+            try:
+
+                with st.spinner(
+                    "🎬 Downloading clips and stitching the final video... "
+                    "this can take a minute for longer videos."
+                ):
+
+                    workdir = tempfile.mkdtemp(prefix="cineluxe_")
+                    st.session_state.stitch_workdir = workdir
+
+                    width, height = dims_for_aspect(aspect_ratio)
+
+                    voiceover_path = None
+
+                    if audio is not None:
+                        ext = os.path.splitext(audio.name)[1] or ".mp3"
+                        voiceover_path = os.path.join(workdir, "voiceover" + ext)
+                        with open(voiceover_path, "wb") as f:
+                            f.write(audio.getvalue())
+
+                    final_path = stitch_final_video(
+                        ordered_urls,
+                        workdir,
+                        voiceover_path=voiceover_path,
+                        width=width,
+                        height=height
+                    )
+
+                st.session_state.final_video_path = final_path
+
+                st.success("✅ Final video is ready below!")
+
+            except Exception as exc:
+
+                st.error(
+                    f"❌ Could not stitch the final video: {exc}\n\n"
+                    "Make sure `ffmpeg` is installed on the server — on "
+                    "Streamlit Cloud, add a `packages.txt` file (already "
+                    "included in this repo) with a line containing `ffmpeg`."
+                )
+
+        if (
+            st.session_state.final_video_path
+            and os.path.exists(st.session_state.final_video_path)
+        ):
+
+            st.video(st.session_state.final_video_path)
+
+            with open(st.session_state.final_video_path, "rb") as f:
+                st.download_button(
+                    "⬇️ Download Final Video",
+                    data=f.read(),
+                    file_name="cineluxe_final_video.mp4",
+                    mime="video/mp4",
+                    use_container_width=True,
+                    key="download_final_video"
+                )
+
+
+    # ========================================================
     # SCENE DETAILS
     # ========================================================
 
@@ -1272,6 +1391,8 @@ if st.session_state.plan:
 
         st.session_state.videos = {}
 
+        st.session_state.final_video_path = None
+
 
         st.rerun()
 
@@ -1301,6 +1422,11 @@ else:
         5. CineLuxe sends the scene prompts to
            the AI video model and generates
            your video scenes.
+
+        6. Click **🎞️ Combine Scenes Into One Final Video**
+           to join every generated clip into a single,
+           downloadable final video (with your uploaded
+           voice-over on top, if you added one).
 
         """
 
