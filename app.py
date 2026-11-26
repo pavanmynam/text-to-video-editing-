@@ -33,132 +33,164 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --clx-bg:        #15130F;
+    --clx-panel:     #1C1914;
+    --clx-sunken:    #0E0C09;
+    --clx-line:      #3A362C;
+    --clx-ivory:     #EDE6D6;
+    --clx-muted:     #9C9484;
+    --clx-gold:      #C9A227;
+    --clx-gold-lite: #E6C458;
+    --clx-error:     #C1554C;
+}
 
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--clx-ivory);
+}
+
+.stApp {
+    background: var(--clx-bg);
 }
 
 .block-container {
-    max-width: 1450px;
-    padding-top: 1.2rem;
+    max-width: 1320px;
+    padding-top: 1.4rem;
 }
 
-.hero {
-    padding: 32px 36px;
-    border: 1px solid #2a2a32;
-    border-radius: 22px;
-    background: linear-gradient(
-        135deg,
-        #121218,
-        #1a1026
-    );
-    margin-bottom: 20px;
-    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1px;
+    color: var(--clx-ivory) !important;
 }
 
-.hero h1 {
+/* -- Masthead: flat, no card, a hairline rule carries the weight -- */
+.masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 18px;
+    margin-bottom: 26px;
+    border-bottom: 1px solid var(--clx-line);
+}
+
+.masthead .wordmark {
+    font-family: 'Playfair Display', Georgia, serif;
     font-weight: 800;
-    letter-spacing: -0.5px;
+    font-size: 2.1rem;
+    color: var(--clx-ivory);
+    letter-spacing: 0.3px;
 }
 
-.badge {
-    display: inline-block;
-    padding: 5px 14px;
-    border-radius: 99px;
-    background: #5b21b6;
-    color: white;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+.masthead .wordmark span {
+    color: var(--clx-gold);
 }
 
-.card {
-    border: 1px solid #2b2b34;
-    background: #121216;
-    border-radius: 16px;
-    padding: 16px;
-    margin: 10px 0;
+.masthead .tagline {
+    color: var(--clx-muted);
+    font-size: 0.95rem;
 }
 
 .small {
-    color: #a1a1aa;
+    color: var(--clx-muted);
     font-size: 0.9rem;
 }
 
-.generate-box {
-    padding: 24px;
-    border-radius: 18px;
-    border: 1px solid #6d28d9;
-    background: linear-gradient(
-        135deg,
-        #160c27,
-        #0f1020
-    );
-    margin-top: 15px;
-    box-shadow: 0 14px 40px rgba(109, 40, 217, 0.18);
-}
-
+/* -- The one bold treatment in the page: the finished film -- */
 .final-video-frame {
-    padding: 20px;
-    border-radius: 20px;
-    border: 1px solid #c026d3;
-    background: linear-gradient(135deg, #1c0f2e, #0d0b18);
-    box-shadow: 0 16px 48px rgba(192, 38, 211, 0.22);
-    margin-top: 10px;
+    padding: 22px;
+    border-radius: 6px;
+    border: 1px solid var(--clx-gold);
+    background: var(--clx-sunken);
 }
 
-/* -- Buttons: premium, consistent, slightly rounded -- */
+/* -- Buttons -- */
 .stButton > button, .stDownloadButton > button {
-    border-radius: 12px !important;
+    border-radius: 4px !important;
     font-weight: 600 !important;
+    font-family: 'Inter', sans-serif !important;
     letter-spacing: 0.01em;
-    padding: 0.6rem 1rem !important;
-    border: 1px solid #2b2b34 !important;
-    transition: transform 0.08s ease, box-shadow 0.15s ease;
+    padding: 0.6rem 1.1rem !important;
+    background: transparent !important;
+    color: var(--clx-ivory) !important;
+    border: 1px solid var(--clx-line) !important;
+    transition: border-color 0.15s ease, color 0.15s ease;
 }
 
 .stButton > button:hover, .stDownloadButton > button:hover {
-    transform: translateY(-1px);
+    border-color: var(--clx-gold) !important;
+    color: var(--clx-gold-lite) !important;
 }
 
 button[kind="primary"] {
-    background: linear-gradient(135deg, #7c3aed, #c026d3) !important;
-    border: none !important;
-    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35) !important;
+    background: var(--clx-gold) !important;
+    border: 1px solid var(--clx-gold) !important;
+    color: #16140E !important;
 }
 
-/* -- Native video player: rounded, bordered, elevated -- */
+button[kind="primary"]:hover {
+    background: var(--clx-gold-lite) !important;
+    border-color: var(--clx-gold-lite) !important;
+    color: #16140E !important;
+}
+
+/* -- Native video player: a screening frame, not a glowing card -- */
 div[data-testid="stVideo"] {
-    border-radius: 16px;
+    border-radius: 4px;
     overflow: hidden;
-    border: 1px solid #2b2b34;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    background: #000;
+    padding: 6px;
+    border: 1px solid var(--clx-line);
 }
 
 div[data-testid="stVideo"] video {
-    border-radius: 16px;
+    border-radius: 2px;
 }
 
-/* -- Metrics -- */
+/* -- Metrics: plain numbers, a hairline above, no card kit -- */
 div[data-testid="stMetric"] {
-    background: #121216;
-    border: 1px solid #2b2b34;
-    border-radius: 14px;
-    padding: 12px 16px;
+    border-top: 2px solid var(--clx-gold);
+    padding: 10px 2px 2px 2px;
 }
 
-/* -- Expanders (scene blueprint cards) -- */
+div[data-testid="stMetricLabel"] {
+    color: var(--clx-muted) !important;
+}
+
+/* -- Expanders (scene blueprint) -- */
 div[data-testid="stExpander"] {
-    border: 1px solid #2b2b34 !important;
-    border-radius: 14px !important;
-    overflow: hidden;
+    border: 1px solid var(--clx-line) !important;
+    border-radius: 4px !important;
+    background: var(--clx-panel);
 }
 
-/* -- Sidebar -- */
+/* -- Inputs -- */
+div[data-testid="stTextArea"] textarea,
+div[data-testid="stFileUploaderDropzone"],
+div[data-baseweb="select"] > div {
+    border-radius: 4px !important;
+    border-color: var(--clx-line) !important;
+    background: var(--clx-panel) !important;
+}
+
+div[data-testid="stTextArea"] textarea:focus {
+    border-color: var(--clx-gold) !important;
+}
+
+hr, div[data-testid="stDivider"] {
+    border-color: var(--clx-line) !important;
+}
+
+/* -- Sidebar: a flat control panel -- */
 section[data-testid="stSidebar"] {
-    border-right: 1px solid #2a2a32;
+    background: var(--clx-panel);
+    border-right: 1px solid var(--clx-line);
 }
 
 </style>
@@ -217,21 +249,11 @@ if "stitch_workdir" not in st.session_state:
 # ============================================================
 
 st.markdown("""
-<div class="hero">
+<div class="masthead">
 
-<span class="badge">
-● DEEPU MODE
-</span>
-
-<h1 style="margin-bottom:4px">
-🎬 CineLuxe AI
-</h1>
-
-<div class="small">
-
-Script → DEEPU Intelligence → Cinematic Scenes →
-AI Video Generation
-
+<div>
+<div class="wordmark">Cine<span>Luxe</span></div>
+<div class="tagline">DEEPU Production Suite — script to screen</div>
 </div>
 
 </div>
@@ -244,7 +266,7 @@ AI Video Generation
 
 with st.sidebar:
 
-    st.header("⚙️ Production Settings")
+    st.header("Production Settings")
 
     duration = st.selectbox(
 
@@ -287,7 +309,7 @@ with st.sidebar:
     st.divider()
 
 
-    st.subheader("🔐 API Status")
+    st.subheader("Connections")
 
 
     gemini_status = (
@@ -314,7 +336,7 @@ with st.sidebar:
 
     st.write(
 
-        "🧠 Gemini:",
+        "Gemini:",
 
         gemini_status
 
@@ -323,7 +345,7 @@ with st.sidebar:
 
     st.write(
 
-        "🎬 FAL:",
+        "FAL:",
 
         fal_status
 
@@ -360,7 +382,7 @@ left, right = st.columns(
 
 with left:
 
-    st.subheader("📝 Script Studio")
+    st.subheader("Script Studio")
 
 
     # --------------------------------------------------------
@@ -450,7 +472,7 @@ with left:
 
         analyze = st.button(
 
-            "🧠 Analyze Script",
+            "Analyze Script",
 
             type="primary",
 
@@ -463,7 +485,7 @@ with left:
 
         clear = st.button(
 
-            "🗑️ Clear Project",
+            "Clear Project",
 
             use_container_width=True
 
@@ -510,7 +532,7 @@ with left:
 
                 with st.spinner(
 
-                    "🧠 DEEPU is understanding your script..."
+                    "DEEPU is understanding your script..."
 
                 ):
 
@@ -561,7 +583,7 @@ with right:
 
     st.subheader(
 
-        "🎙 Voice-over & Timing"
+        "Voice-over & Timing"
 
     )
 
@@ -641,7 +663,7 @@ with right:
 
     st.subheader(
 
-        "📹 Reference Video"
+        "Reference Video"
 
     )
 
@@ -704,7 +726,7 @@ if st.session_state.plan:
 
     st.subheader(
 
-        "🧠 DEEPU Production Plan"
+        "DEEPU Production Plan"
 
     )
 
@@ -738,7 +760,7 @@ if st.session_state.plan:
 
     st.caption(
 
-        f"🎨 Style: {style}"
+        f"Style: {style}"
 
     )
 
@@ -804,26 +826,9 @@ if st.session_state.plan:
     # MAIN VIDEO GENERATION SECTION
     # ========================================================
 
-    st.markdown("""
+    st.subheader("Generate")
 
-    <div class="generate-box">
-
-    <h2>
-    🎬 Generate Your Video
-    </h2>
-
-    <div class="small">
-
-    DEEPU has analyzed your script.
-
-    Click the button below to automatically generate
-    AI video clips for all scenes.
-
-    </div>
-
-    </div>
-
-    """, unsafe_allow_html=True)
+    st.write("DEEPU has analyzed your script. Generate an AI video clip for each scene below.")
 
 
     avg_seconds_per_scene = 60
@@ -833,14 +838,13 @@ if st.session_state.plan:
     eta_minutes = max(1, round(eta_seconds / 60))
 
     st.caption(
-        f"⏱️ Estimated time: roughly {eta_minutes} minute(s) for "
-        f"{len(scenes)} scene(s) (AI video generation typically takes "
-        "30–90 seconds per scene)."
+        f"Estimated time: roughly {eta_minutes} minute(s) for "
+        f"{len(scenes)} scene(s) (30–90 seconds per scene)."
     )
 
     generate_video = st.button(
 
-        "🎬 Generate AI Video",
+        "Generate Video",
 
         type="primary",
 
@@ -893,7 +897,7 @@ if st.session_state.plan:
 
             st.info(
 
-                f"🎬 Starting generation for "
+                f"Starting generation for "
                 f"{len(scenes)} scenes..."
 
             )
@@ -931,7 +935,7 @@ if st.session_state.plan:
                 remaining = max(0, round(avg_so_far * (total - done)))
 
                 status.info(
-                    f"🎬 Completed {done} / {total} scenes "
+                    f"Completed {done} / {total} scenes "
                     f"• running {MAX_WORKERS} in parallel "
                     f"• elapsed {round(elapsed)}s "
                     f"• est. remaining ~{remaining}s"
@@ -1046,7 +1050,7 @@ if st.session_state.plan:
 
         st.subheader(
 
-            "🎥 Generated Video Scenes"
+            "Generated Clips"
 
         )
 
@@ -1070,7 +1074,7 @@ if st.session_state.plan:
 
                     f"""
 
-                    ### 🎬 Scene {idx + 1}
+                    ### Scene {idx + 1}
 
                     """
 
@@ -1141,7 +1145,7 @@ if st.session_state.plan:
         )
 
         stitch_clicked = st.button(
-            "🎬 Render Final Video",
+            "Render Final Video",
             type="primary",
             use_container_width=True,
             key="stitch_button"
@@ -1152,7 +1156,7 @@ if st.session_state.plan:
             try:
 
                 with st.spinner(
-                    "🎬 Downloading clips and stitching the final video... "
+                    "Downloading clips and stitching the final video... "
                     "this can take a minute for longer videos."
                 ):
 
@@ -1201,7 +1205,7 @@ if st.session_state.plan:
 
                 with open(st.session_state.final_video_path, "rb") as f:
                     st.download_button(
-                        "⬇️ Download Final Video",
+                        "Download Final Video",
                         data=f.read(),
                         file_name="cineluxe_final_video.mp4",
                         mime="video/mp4",
@@ -1219,7 +1223,7 @@ if st.session_state.plan:
 
     st.subheader(
 
-        "🎞 DEEPU Scene Blueprint"
+        "Scene Blueprint"
 
     )
 
@@ -1247,7 +1251,7 @@ if st.session_state.plan:
 
         with st.expander(
 
-            f"🎬 Scene {idx + 1}: {title}",
+            f"Scene {idx + 1}: {title}",
 
             expanded=False
 
@@ -1266,7 +1270,7 @@ if st.session_state.plan:
 
                 st.markdown(
 
-                    "**🎙 Voice-over**"
+                    "**Voice-over**"
 
                 )
 
@@ -1286,7 +1290,7 @@ if st.session_state.plan:
 
                 st.markdown(
 
-                    "**🧠 Meaning**"
+                    "**Meaning**"
 
                 )
 
@@ -1306,7 +1310,7 @@ if st.session_state.plan:
 
                 st.markdown(
 
-                    "**🎬 Primary Visual**"
+                    "**Primary Visual**"
 
                 )
 
@@ -1326,7 +1330,7 @@ if st.session_state.plan:
 
                 st.markdown(
 
-                    "**🎞 Secondary Visual**"
+                    "**Secondary Visual**"
 
                 )
 
@@ -1427,7 +1431,7 @@ if st.session_state.plan:
 
             st.markdown(
 
-                "**🤖 AI Video Prompt**"
+                "**AI Video Prompt**"
 
             )
 
@@ -1482,22 +1486,22 @@ else:
 
         """
 
-        🎬 **How it works**
+        **How it works**
 
         1. Paste your complete script.
 
-        2. Click **Analyze with DEEPU**.
+        2. Click **Analyze Script**.
 
         3. DEEPU understands the story and
            automatically creates cinematic scenes.
 
-        4. Click **🎬🔥 GENERATE VIDEO**.
+        4. Click **Generate Video**.
 
         5. CineLuxe sends the scene prompts to
            the AI video model and generates
            your video scenes.
 
-        6. Click **🎞️ Combine Scenes Into One Final Video**
+        6. Click **Render Final Video**
            to join every generated clip into a single,
            downloadable final video (with your uploaded
            voice-over on top, if you added one).
