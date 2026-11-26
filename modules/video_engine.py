@@ -1,16 +1,9 @@
-def generate_kling_video(prompt, duration=5, aspect_ratio="16:9", fal_key=None):
+def _submit_and_get_url(endpoint, arguments, fal_key):
     if not fal_key:
         raise ValueError("FAL_KEY is missing. Add it in Streamlit Secrets.")
 
     import os
     import fal_client
-
-    endpoint = "fal-ai/kling-video/v2.1/master/text-to-video"
-    arguments = {
-        "prompt": prompt,
-        "duration": str(duration),
-        "aspect_ratio": aspect_ratio
-    }
 
     # The installed fal-client version's submit() does not accept a `key`
     # keyword argument directly (that raises:
@@ -35,6 +28,44 @@ def generate_kling_video(prompt, duration=5, aspect_ratio="16:9", fal_key=None):
     if not url:
         raise RuntimeError(f"No video URL returned: {str(result)[:500]}")
     return url
+
+
+def generate_kling_video(prompt, duration=5, aspect_ratio="16:9", fal_key=None):
+    """Text-to-video: fal-ai/kling-video/v2.1/master/text-to-video."""
+
+    endpoint = "fal-ai/kling-video/v2.1/master/text-to-video"
+    arguments = {
+        "prompt": prompt,
+        "duration": str(duration),
+        "aspect_ratio": aspect_ratio
+    }
+    return _submit_and_get_url(endpoint, arguments, fal_key)
+
+
+def generate_kling_image_to_video(prompt, image_path, duration=5, fal_key=None):
+    """Image-to-video: fal-ai/kling-video/v2.1/master/image-to-video.
+    Uploads the local image file to FAL's file store first (the model takes
+    an image_url, not raw bytes). Output keeps the source image's aspect
+    ratio — this endpoint has no aspect_ratio input."""
+
+    if not fal_key:
+        raise ValueError("FAL_KEY is missing. Add it in Streamlit Secrets.")
+
+    import os
+    import fal_client
+
+    os.environ["FAL_KEY"] = fal_key
+
+    image_url = fal_client.upload_file(image_path)
+
+    endpoint = "fal-ai/kling-video/v2.1/master/image-to-video"
+    arguments = {
+        "prompt": prompt,
+        "image_url": image_url,
+        "duration": str(duration)
+    }
+    return _submit_and_get_url(endpoint, arguments, fal_key)
+
 
 def estimate_total_seconds(scenes, default_seconds=5):
     return sum(int(scene.get("estimated_seconds", default_seconds) or default_seconds) for scene in scenes)

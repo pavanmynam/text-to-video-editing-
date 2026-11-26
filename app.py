@@ -8,11 +8,26 @@ import streamlit as st
 from modules.deepu_engine import analyze_script
 from modules.video_engine import (
     generate_kling_video,
+    generate_kling_image_to_video,
     estimate_total_seconds
 )
 from modules.stitch_engine import (
     stitch_final_video,
     dims_for_aspect
+)
+from modules.transcribe_engine import (
+    transcribe_audio_file,
+    transcript_text,
+    transcript_segments
+)
+from modules.subtitle_engine import build_srt_for_scenes, build_srt, translate_lines
+from modules.edit_engine import (
+    trim_video,
+    extract_thumbnail,
+    replace_audio,
+    extract_audio,
+    burn_subtitles,
+    get_duration_seconds
 )
 
 # ============================================================
@@ -438,6 +453,74 @@ with left:
 
 
     # --------------------------------------------------------
+    # DICTATE SCRIPT (MIC)
+    # --------------------------------------------------------
+
+    st.markdown("**Dictate your script**")
+
+    mic_recording = st.audio_input(
+        "Record your story — speak naturally, then stop the recording"
+    )
+
+    if mic_recording is not None:
+
+        transcribe_clicked = st.button(
+            "Transcribe Recording Into Script",
+            use_container_width=True,
+            key="transcribe_mic_button"
+        )
+
+        if transcribe_clicked:
+
+            if not secret("FAL_KEY"):
+
+                st.error(
+                    "FAL_KEY is missing — add it in Streamlit Secrets to "
+                    "transcribe audio (transcription runs on the same FAL "
+                    "account as video generation)."
+                )
+
+            else:
+
+                try:
+
+                    with st.spinner("Transcribing your recording..."):
+
+                        tmp_dir = tempfile.mkdtemp(prefix="cineluxe_mic_")
+                        mic_path = os.path.join(tmp_dir, "recording.wav")
+
+                        with open(mic_path, "wb") as f:
+                            f.write(mic_recording.getvalue())
+
+                        result = transcribe_audio_file(
+                            mic_path,
+                            fal_key=secret("FAL_KEY")
+                        )
+
+                        text = transcript_text(result)
+
+                    if text.strip():
+
+                        st.session_state.script = (
+                            st.session_state.script + "\n\n" + text
+                        ).strip()
+
+                        st.success("Transcribed — added to your script below.")
+
+                        st.rerun()
+
+                    else:
+
+                        st.warning("Could not detect any speech in that recording.")
+
+                except Exception as exc:
+
+                    st.error(f"Transcription failed: {exc}")
+
+    st.divider()
+
+
+    # --------------------------------------------------------
     # SCRIPT FILE UPLOAD
     # --------------------------------------------------------
 
@@ -750,6 +833,155 @@ with right:
         )
 
 
+    # --------------------------------------------------------
+    # REFERENCE IMAGE (IMAGE-TO-VIDEO)
+    # --------------------------------------------------------
+
+    st.divider()
+
+    st.subheader("Reference Image")
+
+    reference_image = st.file_uploader(
+        "Optional image to animate (image-to-video)",
+        type=["png", "jpg", "jpeg", "webp"],
+        key="reference_image_uploader"
+    )
+
+    use_image_to_video = False
+
+    if reference_image:
+
+        st.image(reference_image, use_container_width=True)
+
+        use_image_to_video = st.checkbox(
+            "Generate every scene from this image (image-to-video) "
+            "instead of from text alone",
+            value=True
+        )
+
+        st.caption(
+            "Every scene clip will start from this image. The output "
+            "keeps this image's aspect ratio — the Aspect ratio setting "
+            "in the sidebar is ignored for image-to-video."
+        )
+
+
+# ============================================================
+# VIDEO TO SUBTITLES (standalone tool — works on any uploaded video)
+# ============================================================
+
+st.divider()
+
+with st.expander("🎬 Video to Subtitles — transcribe any video", expanded=False):
+
+    st.caption(
+        "Upload any video and get a subtitle file, in the spoken language "
+        "or translated into another one — independent of the script flow "
+        "above."
+    )
+
+    vts_video = st.file_uploader(
+        "Video to transcribe",
+        type=["mp4", "mov", "webm", "mkv"],
+        key="vts_video_uploader"
+    )
+
+    vts_language = st.text_input(
+        "Translate subtitles into (leave blank to keep the spoken language)",
+        key="vts_language_input",
+        placeholder="e.g. Telugu, Hindi, English, Spanish"
+    )
+
+    if vts_video and st.button(
+        "Transcribe to Subtitles", use_container_width=True,
+        key="vts_transcribe_button"
+    ):
+
+        if not secret("FAL_KEY"):
+            st.error("FAL_KEY is missing. Add it in Streamlit Secrets.")
+
+        else:
+
+            try:
+
+                with st.spinner("Extracting audio and transcribing..."):
+
+                    workdir = tempfile.mkdtemp(prefix="cineluxe_vts_")
+
+                    ext = os.path.splitext(vts_video.name)[1] or ".mp4"
+                    video_path = os.path.join(workdir, "input" + ext)
+
+                    with open(video_path, "wb") as f:
+                        f.write(vts_video.getvalue())
+
+                    audio_path = os.path.join(workdir, "audio.wav")
+                    extract_audio(video_path, audio_path)
+
+                    result = transcribe_audio_file(audio_path, secret("FAL_KEY"))
+
+                    segments = transcript_segments(result)
+
+                    if not segments:
+                        full_text = transcript_text(result)
+                        if full_text:
+                            fallback_len = get_duration_seconds(video_path) or 5.0
+                            segments = [(0.0, fallback_len, full_text)]
+
+                    warn = None
+
+                    if vts_language.strip() and segments:
+
+                        texts = [t for _, _, t in segments]
+
+                        try:
+                            translated = translate_lines(
+                                texts,
+                                vts_language.strip(),
+                                secret("GEMINI_API_KEY")
+                            )
+                            segments = [
+                                (start, end, translated[i])
+                                for i, (start, end, _) in enumerate(segments)
+                            ]
+                        except Exception as exc:
+                            warn = (
+                                f"Could not translate into "
+                                f"{vts_language.strip()} ({exc}); using the "
+                                "original spoken language instead."
+                            )
+
+                    srt_text = build_srt(segments)
+
+                if warn:
+                    st.warning(warn)
+
+                if not segments:
+                    st.warning("No speech was detected in this video.")
+                else:
+                    st.session_state.vts_srt = srt_text
+                    st.success("Transcription complete.")
+
+            except Exception as exc:
+
+                st.error(f"Could not transcribe video: {exc}")
+
+    if st.session_state.get("vts_srt"):
+
+        st.text_area(
+            "Preview", st.session_state.vts_srt, height=160,
+            key="vts_srt_preview"
+        )
+
+        st.download_button(
+            "Download Subtitles (.srt)",
+            data=st.session_state.vts_srt,
+            file_name="video_subtitles.srt",
+            mime="text/plain",
+            use_container_width=True,
+            key="vts_download_button"
+        )
+
+
 # ============================================================
 # DEEPU PLAN
 # ============================================================
@@ -946,11 +1178,23 @@ if st.session_state.plan:
 
             st.session_state.generating = True
 
+            reference_image_path = None
+
+            if use_image_to_video and reference_image is not None:
+
+                img_dir = tempfile.mkdtemp(prefix="cineluxe_img_")
+                ext = os.path.splitext(reference_image.name)[1] or ".jpg"
+                reference_image_path = os.path.join(img_dir, "reference" + ext)
+
+                with open(reference_image_path, "wb") as f:
+                    f.write(reference_image.getvalue())
+
 
             st.info(
 
                 f"Starting generation for "
                 f"{len(scenes)} scenes..."
+                + (" (image-to-video mode)" if reference_image_path else "")
 
             )
 
@@ -1018,13 +1262,25 @@ if st.session_state.plan:
 
                         continue
 
-                    future = executor.submit(
-                        generate_kling_video,
-                        prompt,
-                        duration=duration,
-                        aspect_ratio=aspect_ratio,
-                        fal_key=fal_key
-                    )
+                    if reference_image_path:
+
+                        future = executor.submit(
+                            generate_kling_image_to_video,
+                            prompt,
+                            reference_image_path,
+                            duration=duration,
+                            fal_key=fal_key
+                        )
+
+                    else:
+
+                        future = executor.submit(
+                            generate_kling_video,
+                            prompt,
+                            duration=duration,
+                            aspect_ratio=aspect_ratio,
+                            fal_key=fal_key
+                        )
 
                     future_to_scene[future] = (scene_number, scene_id)
 
@@ -1275,6 +1531,278 @@ if st.session_state.plan:
                         mime="video/mp4",
                         use_container_width=True,
                         key="download_final_video"
+                    )
+
+
+    # ========================================================
+    # FINISHING TOOLS (operate on the final video above, in place)
+    # ========================================================
+
+    if (
+        st.session_state.final_video_path
+        and os.path.exists(st.session_state.final_video_path)
+    ):
+
+        st.divider()
+
+        st.subheader("Finishing Tools")
+
+        st.caption(
+            "These work on the final video above, and each one updates it "
+            "in place — so you can chain them (e.g. trim, then add "
+            "subtitles to the trimmed result)."
+        )
+
+        tool_tabs = st.tabs(["Subtitles", "Trim", "Replace Audio", "Thumbnail"])
+
+        def _tool_workdir():
+            if not st.session_state.stitch_workdir:
+                st.session_state.stitch_workdir = tempfile.mkdtemp(prefix="cineluxe_")
+            return st.session_state.stitch_workdir
+
+        # -- Subtitles --
+        with tool_tabs[0]:
+
+            subtitle_language = st.text_input(
+                "Subtitle language (leave blank to keep the script's own "
+                "language)",
+                key="subtitle_language_input",
+                placeholder="e.g. Telugu, Hindi, English, Spanish"
+            )
+
+            sub_col1, sub_col2 = st.columns(2)
+
+            with sub_col1:
+                build_srt_clicked = st.button(
+                    "Generate Subtitles", use_container_width=True,
+                    key="build_srt_button"
+                )
+
+            with sub_col2:
+                burn_clicked = st.button(
+                    "Burn Onto Video", use_container_width=True,
+                    key="burn_srt_button"
+                )
+
+            if build_srt_clicked or burn_clicked:
+
+                try:
+
+                    with st.spinner("Building subtitles..."):
+
+                        srt_text, warn = build_srt_for_scenes(
+                            scenes,
+                            target_language=subtitle_language.strip() or None,
+                            gemini_api_key=secret("GEMINI_API_KEY"),
+                            default_seconds=duration
+                        )
+
+                    if warn:
+                        st.warning(warn)
+
+                    st.session_state.last_srt = srt_text
+
+                    st.success("Subtitles generated.")
+
+                except Exception as exc:
+
+                    st.error(f"Could not build subtitles: {exc}")
+
+            if st.session_state.get("last_srt"):
+
+                st.download_button(
+                    "Download Subtitles (.srt)",
+                    data=st.session_state.last_srt,
+                    file_name="cineluxe_subtitles.srt",
+                    mime="text/plain",
+                    use_container_width=True,
+                    key="download_srt_button"
+                )
+
+                if burn_clicked:
+
+                    try:
+
+                        with st.spinner("Burning subtitles onto the final video..."):
+
+                            workdir = _tool_workdir()
+                            srt_path = os.path.join(workdir, "subtitles.srt")
+
+                            with open(srt_path, "w", encoding="utf-8") as f:
+                                f.write(st.session_state.last_srt)
+
+                            out_path = os.path.join(workdir, "final_subtitled.mp4")
+
+                            burn_subtitles(
+                                st.session_state.final_video_path,
+                                srt_path,
+                                out_path
+                            )
+
+                        st.session_state.final_video_path = out_path
+
+                        st.success("Subtitles burned onto the final video.")
+
+                        st.rerun()
+
+                    except Exception as exc:
+
+                        st.error(f"Could not burn subtitles: {exc}")
+
+        # -- Trim --
+        with tool_tabs[1]:
+
+            current_duration = get_duration_seconds(
+                st.session_state.final_video_path
+            ) or 0.0
+
+            st.caption(f"Current video length: {current_duration:.1f} sec")
+
+            trim_col1, trim_col2 = st.columns(2)
+
+            with trim_col1:
+                trim_start = st.number_input(
+                    "Start at (sec)", min_value=0.0, value=0.0, step=1.0,
+                    key="trim_start_input"
+                )
+
+            with trim_col2:
+                trim_end = st.number_input(
+                    "End at (sec) — 0 means end of video",
+                    min_value=0.0, value=0.0, step=1.0,
+                    key="trim_end_input"
+                )
+
+            if st.button(
+                "Trim Final Video", use_container_width=True,
+                key="trim_button"
+            ):
+
+                try:
+
+                    with st.spinner("Trimming..."):
+
+                        workdir = _tool_workdir()
+                        out_path = os.path.join(workdir, "final_trimmed.mp4")
+
+                        end_val = (
+                            trim_end if trim_end and trim_end > trim_start
+                            else None
+                        )
+
+                        trim_video(
+                            st.session_state.final_video_path,
+                            out_path,
+                            start_seconds=trim_start,
+                            end_seconds=end_val
+                        )
+
+                    st.session_state.final_video_path = out_path
+
+                    st.success("Trimmed.")
+
+                    st.rerun()
+
+                except Exception as exc:
+
+                    st.error(f"Could not trim video: {exc}")
+
+        # -- Replace Audio --
+        with tool_tabs[2]:
+
+            new_audio = st.file_uploader(
+                "New audio track",
+                type=["mp3", "wav", "m4a", "aac"],
+                key="replace_audio_uploader"
+            )
+
+            if new_audio and st.button(
+                "Replace Audio on Final Video", use_container_width=True,
+                key="replace_audio_button"
+            ):
+
+                try:
+
+                    with st.spinner("Replacing audio..."):
+
+                        workdir = _tool_workdir()
+
+                        ext = os.path.splitext(new_audio.name)[1] or ".mp3"
+                        audio_path = os.path.join(workdir, "new_audio" + ext)
+
+                        with open(audio_path, "wb") as f:
+                            f.write(new_audio.getvalue())
+
+                        out_path = os.path.join(workdir, "final_audio_replaced.mp4")
+
+                        replace_audio(
+                            st.session_state.final_video_path,
+                            audio_path,
+                            out_path
+                        )
+
+                    st.session_state.final_video_path = out_path
+
+                    st.success("Audio replaced.")
+
+                    st.rerun()
+
+                except Exception as exc:
+
+                    st.error(f"Could not replace audio: {exc}")
+
+        # -- Thumbnail --
+        with tool_tabs[3]:
+
+            thumb_time = st.number_input(
+                "Grab frame at (sec)", min_value=0.0, value=1.0, step=0.5,
+                key="thumb_time_input"
+            )
+
+            if st.button(
+                "Generate Thumbnail", use_container_width=True,
+                key="thumb_button"
+            ):
+
+                try:
+
+                    with st.spinner("Extracting frame..."):
+
+                        workdir = _tool_workdir()
+                        out_path = os.path.join(workdir, "thumbnail.jpg")
+
+                        extract_thumbnail(
+                            st.session_state.final_video_path,
+                            out_path,
+                            timestamp_seconds=thumb_time
+                        )
+
+                    st.session_state.last_thumbnail = out_path
+
+                    st.success("Thumbnail ready.")
+
+                except Exception as exc:
+
+                    st.error(f"Could not extract thumbnail: {exc}")
+
+            if (
+                st.session_state.get("last_thumbnail")
+                and os.path.exists(st.session_state.last_thumbnail)
+            ):
+
+                st.image(
+                    st.session_state.last_thumbnail,
+                    use_container_width=True
+                )
+
+                with open(st.session_state.last_thumbnail, "rb") as f:
+                    st.download_button(
+                        "Download Thumbnail",
+                        data=f.read(),
+                        file_name="cineluxe_thumbnail.jpg",
+                        mime="image/jpeg",
+                        use_container_width=True,
+                        key="download_thumbnail_button"
                     )
 
 
