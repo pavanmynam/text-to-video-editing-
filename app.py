@@ -21,6 +21,7 @@ from modules.transcribe_engine import (
     transcript_segments
 )
 from modules.subtitle_engine import build_srt_for_scenes, build_srt, translate_lines
+from modules.text_tools_engine import translate_text, autocorrect_text
 from modules.edit_engine import (
     trim_video,
     extract_thumbnail,
@@ -206,7 +207,6 @@ div[data-testid="stExpander"] {
 }
 
 /* -- Inputs -- */
-div[data-testid="stTextArea"] textarea,
 div[data-testid="stFileUploaderDropzone"],
 div[data-baseweb="select"] > div {
     border-radius: 12px !important;
@@ -214,9 +214,26 @@ div[data-baseweb="select"] > div {
     background: var(--clx-panel) !important;
 }
 
+/* -- Script Notepad: a clean white-paper island on the dark app -- */
+div[data-testid="stTextArea"] textarea {
+    border-radius: 14px !important;
+    border: 1px solid #E4E1D8 !important;
+    background: #FAFAF7 !important;
+    color: #1C1B18 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1rem !important;
+    line-height: 1.65 !important;
+    padding: 18px !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+}
+
+div[data-testid="stTextArea"] textarea::placeholder {
+    color: #9B9890 !important;
+}
+
 div[data-testid="stTextArea"] textarea:focus {
     border-color: var(--clx-purple) !important;
-    box-shadow: 0 0 0 1px var(--clx-purple) !important;
+    box-shadow: 0 0 0 2px var(--clx-purple) !important;
 }
 
 hr, div[data-testid="stDivider"] {
@@ -266,6 +283,11 @@ def secret(name):
 if "script" not in st.session_state:
 
     st.session_state.script = ""
+
+
+if "script_undo" not in st.session_state:
+
+    st.session_state.script_undo = None
 
 
 if "plan" not in st.session_state:
@@ -458,6 +480,28 @@ with left:
 
     st.markdown("**Dictate your script**")
 
+    MIC_LANGUAGE_CODES = {
+        "Auto-detect": None,
+        "Telugu": "te",
+        "Hindi": "hi",
+        "English": "en",
+        "Tamil": "ta",
+        "Kannada": "kn",
+        "Malayalam": "ml",
+        "Marathi": "mr",
+        "Bengali": "bn",
+        "Gujarati": "gu",
+        "Punjabi": "pa",
+        "Urdu": "ur",
+    }
+
+    mic_spoken_language = st.selectbox(
+        "Language you'll speak in (helps the mic transcribe accurately)",
+        options=list(MIC_LANGUAGE_CODES.keys()),
+        index=1,
+        key="mic_spoken_language_select"
+    )
+
     mic_recording = st.audio_input(
         "Record your story — speak naturally, then stop the recording"
     )
@@ -494,7 +538,8 @@ with left:
 
                         result = transcribe_audio_file(
                             mic_path,
-                            fal_key=secret("FAL_KEY")
+                            fal_key=secret("FAL_KEY"),
+                            language=MIC_LANGUAGE_CODES.get(mic_spoken_language)
                         )
 
                         text = transcript_text(result)
@@ -590,6 +635,95 @@ with left:
 
 
     st.session_state.script = script
+
+    word_count = len(script.split())
+    char_count = len(script)
+
+    st.caption(f"{word_count} words · {char_count} characters")
+
+
+    # --------------------------------------------------------
+    # NOTEPAD TOOLS — translate & auto-correct the script
+    # --------------------------------------------------------
+
+    NOTEPAD_LANGUAGES = [
+        "Telugu", "Hindi", "English", "Tamil", "Kannada", "Malayalam",
+        "Marathi", "Bengali", "Gujarati", "Punjabi", "Urdu",
+        "Spanish", "French", "Arabic"
+    ]
+
+    nt_col1, nt_col2, nt_col3 = st.columns([2, 1, 1])
+
+    with nt_col1:
+        notepad_target_language = st.selectbox(
+            "Translate script into",
+            options=NOTEPAD_LANGUAGES,
+            key="notepad_target_language_select",
+            label_visibility="collapsed",
+            placeholder="Translate script into..."
+        )
+
+    with nt_col2:
+        translate_script_clicked = st.button(
+            "Translate", use_container_width=True, key="translate_script_button"
+        )
+
+    with nt_col3:
+        autocorrect_script_clicked = st.button(
+            "Auto-correct", use_container_width=True, key="autocorrect_script_button"
+        )
+
+    if translate_script_clicked or autocorrect_script_clicked:
+
+        if not st.session_state.script.strip():
+
+            st.warning("Write or dictate something into the notepad first.")
+
+        elif not secret("GEMINI_API_KEY"):
+
+            st.error(
+                "GEMINI_API_KEY is missing — add it in Streamlit Secrets to "
+                "use Translate / Auto-correct."
+            )
+
+        else:
+
+            try:
+
+                st.session_state.script_undo = st.session_state.script
+
+                if translate_script_clicked:
+
+                    with st.spinner(f"Translating into {notepad_target_language}..."):
+
+                        st.session_state.script = translate_text(
+                            st.session_state.script,
+                            notepad_target_language,
+                            secret("GEMINI_API_KEY")
+                        )
+
+                else:
+
+                    with st.spinner("Auto-correcting spelling & grammar..."):
+
+                        st.session_state.script = autocorrect_text(
+                            st.session_state.script,
+                            secret("GEMINI_API_KEY")
+                        )
+
+                st.rerun()
+
+            except Exception as exc:
+
+                st.error(f"Could not process the script: {exc}")
+
+    if st.session_state.get("script_undo"):
+
+        if st.button("Undo last Translate/Auto-correct", key="undo_notepad_button"):
+
+            st.session_state.script = st.session_state.script_undo
+            st.session_state.script_undo = None
+            st.rerun()
 
 
     # --------------------------------------------------------
