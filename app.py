@@ -33,27 +33,34 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --clx-bg:        #15130F;
-    --clx-panel:     #1C1914;
-    --clx-sunken:    #0E0C09;
-    --clx-line:      #3A362C;
-    --clx-ivory:     #EDE6D6;
-    --clx-muted:     #9C9484;
-    --clx-gold:      #C9A227;
-    --clx-gold-lite: #E6C458;
-    --clx-error:     #C1554C;
+    --clx-bg:        #0A0D14;
+    --clx-panel:     #121623;
+    --clx-panel-2:   #171C2C;
+    --clx-line:      #262C40;
+    --clx-text:      #F2F4F9;
+    --clx-muted:     #8B93AB;
+    --clx-indigo:    #6366F1;
+    --clx-purple:    #A855F7;
+    --clx-pink:      #EC4899;
+    --clx-gradient:  linear-gradient(100deg, var(--clx-indigo), var(--clx-purple) 55%, var(--clx-pink));
+    --clx-success:   #22C55E;
+    --clx-warning:   #F59E0B;
+    --clx-error:     #F43F5E;
 }
 
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    color: var(--clx-ivory);
+    color: var(--clx-text);
 }
 
 .stApp {
-    background: var(--clx-bg);
+    background:
+        radial-gradient(900px 500px at 15% -10%, rgba(99, 102, 241, 0.16), transparent 60%),
+        radial-gradient(900px 500px at 100% 0%, rgba(236, 72, 153, 0.12), transparent 60%),
+        var(--clx-bg);
 }
 
 .block-container {
@@ -62,39 +69,40 @@ html, body, [class*="css"] {
 }
 
 h1, h2, h3 {
-    font-family: 'Playfair Display', Georgia, serif !important;
+    font-family: 'Space Grotesk', 'Inter', sans-serif !important;
     font-weight: 700 !important;
-    letter-spacing: 0.1px;
-    color: var(--clx-ivory) !important;
+    letter-spacing: -0.2px;
+    color: var(--clx-text) !important;
 }
 
-/* -- Masthead: flat, no card, a hairline rule carries the weight -- */
+/* -- Masthead -- */
 .masthead {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 10px;
-    padding-bottom: 18px;
+    padding: 18px 22px;
     margin-bottom: 26px;
-    border-bottom: 1px solid var(--clx-line);
+    border: 1px solid var(--clx-line);
+    border-radius: 18px;
+    background: var(--clx-panel);
 }
 
 .masthead .wordmark {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 800;
-    font-size: 2.1rem;
-    color: var(--clx-ivory);
-    letter-spacing: 0.3px;
-}
-
-.masthead .wordmark span {
-    color: var(--clx-gold);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.9rem;
+    letter-spacing: -0.5px;
+    background: var(--clx-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .masthead .tagline {
     color: var(--clx-muted);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
 }
 
 .small {
@@ -102,96 +110,122 @@ h1, h2, h3 {
     font-size: 0.9rem;
 }
 
-/* -- The one bold treatment in the page: the finished film -- */
-.final-video-frame {
-    padding: 22px;
-    border-radius: 6px;
-    border: 1px solid var(--clx-gold);
-    background: var(--clx-sunken);
+/* -- The hero treatment: the finished film (st.container(border=True)) -- */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(div[data-testid="stVideo"]) {
+    border-radius: 22px !important;
+    border: 2px solid transparent !important;
+    background:
+        linear-gradient(var(--clx-panel), var(--clx-panel)) padding-box,
+        var(--clx-gradient) border-box;
+    box-shadow: 0 20px 60px rgba(168, 85, 247, 0.25);
+    padding: 6px;
 }
 
 /* -- Buttons -- */
 .stButton > button, .stDownloadButton > button {
-    border-radius: 4px !important;
+    border-radius: 12px !important;
     font-weight: 600 !important;
     font-family: 'Inter', sans-serif !important;
     letter-spacing: 0.01em;
     padding: 0.6rem 1.1rem !important;
-    background: transparent !important;
-    color: var(--clx-ivory) !important;
+    background: var(--clx-panel-2) !important;
+    color: var(--clx-text) !important;
     border: 1px solid var(--clx-line) !important;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.15s ease, transform 0.08s ease;
 }
 
 .stButton > button:hover, .stDownloadButton > button:hover {
-    border-color: var(--clx-gold) !important;
-    color: var(--clx-gold-lite) !important;
+    border-color: var(--clx-purple) !important;
+    transform: translateY(-1px);
 }
 
 button[kind="primary"] {
-    background: var(--clx-gold) !important;
-    border: 1px solid var(--clx-gold) !important;
-    color: #16140E !important;
+    background: var(--clx-gradient) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.35) !important;
 }
 
 button[kind="primary"]:hover {
-    background: var(--clx-gold-lite) !important;
-    border-color: var(--clx-gold-lite) !important;
-    color: #16140E !important;
+    filter: brightness(1.08);
 }
 
-/* -- Native video player: a screening frame, not a glowing card -- */
+/* -- Native video player: a clean rounded screen -- */
 div[data-testid="stVideo"] {
-    border-radius: 4px;
+    border-radius: 14px;
     overflow: hidden;
     background: #000;
-    padding: 6px;
     border: 1px solid var(--clx-line);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
 }
 
 div[data-testid="stVideo"] video {
-    border-radius: 2px;
+    border-radius: 14px;
 }
 
-/* -- Metrics: plain numbers, a hairline above, no card kit -- */
+/* -- Metrics -- */
 div[data-testid="stMetric"] {
-    border-top: 2px solid var(--clx-gold);
-    padding: 10px 2px 2px 2px;
+    background: var(--clx-panel);
+    border: 1px solid var(--clx-line);
+    border-radius: 14px;
+    padding: 12px 16px;
 }
 
 div[data-testid="stMetricLabel"] {
     color: var(--clx-muted) !important;
 }
 
+div[data-testid="stMetricValue"] {
+    background: var(--clx-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
 /* -- Expanders (scene blueprint) -- */
 div[data-testid="stExpander"] {
     border: 1px solid var(--clx-line) !important;
-    border-radius: 4px !important;
+    border-radius: 14px !important;
     background: var(--clx-panel);
+    overflow: hidden;
 }
 
 /* -- Inputs -- */
 div[data-testid="stTextArea"] textarea,
 div[data-testid="stFileUploaderDropzone"],
 div[data-baseweb="select"] > div {
-    border-radius: 4px !important;
+    border-radius: 12px !important;
     border-color: var(--clx-line) !important;
     background: var(--clx-panel) !important;
 }
 
 div[data-testid="stTextArea"] textarea:focus {
-    border-color: var(--clx-gold) !important;
+    border-color: var(--clx-purple) !important;
+    box-shadow: 0 0 0 1px var(--clx-purple) !important;
 }
 
 hr, div[data-testid="stDivider"] {
     border-color: var(--clx-line) !important;
 }
 
-/* -- Sidebar: a flat control panel -- */
+/* -- Sidebar -- */
 section[data-testid="stSidebar"] {
     background: var(--clx-panel);
     border-right: 1px solid var(--clx-line);
 }
+
+/* -- Status pills -- */
+.pill {
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pill.ok { background: rgba(34, 197, 94, 0.15); color: var(--clx-success); }
+.pill.warn { background: rgba(245, 158, 11, 0.15); color: var(--clx-warning); }
+.pill.off { background: rgba(244, 63, 94, 0.15); color: var(--clx-error); }
 
 </style>
 """, unsafe_allow_html=True)
@@ -383,6 +417,24 @@ left, right = st.columns(
 with left:
 
     st.subheader("Script Studio")
+
+    with st.expander("Content guidelines — read before you paste a script", expanded=False):
+
+        st.markdown(
+            "The AI video model (Kling, via FAL) automatically rejects scenes "
+            "that include:\n"
+            "- **Copyrighted characters, games or franchises** — e.g. Marvel, "
+            "GTA, Disney, anime, or any named fictional character you don't own\n"
+            "- **Real public figures** depicted doing or saying things they "
+            "didn't\n"
+            "- **Graphic violence, gore, or weapons used on people**\n"
+            "- **Hate symbols, sexual content, or self-harm**\n\n"
+            "Keep your script to original or generic descriptions (\"a young "
+            "woman\", \"a city street\") instead of named copyrighted "
+            "characters, and it will generate cleanly. A rejected scene shows "
+            "up as a red error below with the exact reason, and produces no "
+            "clip."
+        )
 
 
     # --------------------------------------------------------
@@ -934,10 +986,12 @@ if st.session_state.plan:
 
                 remaining = max(0, round(avg_so_far * (total - done)))
 
+                mins, secs = divmod(round(elapsed), 60)
+
                 status.info(
                     f"Completed {done} / {total} scenes "
                     f"• running {MAX_WORKERS} in parallel "
-                    f"• elapsed {round(elapsed)}s "
+                    f"• elapsed {mins:02d}:{secs:02d} "
                     f"• est. remaining ~{remaining}s"
                 )
 
@@ -976,23 +1030,33 @@ if st.session_state.plan:
 
                 _update_status()
 
-                for future in concurrent.futures.as_completed(future_to_scene):
+                pending = set(future_to_scene.keys())
 
-                    scene_number, scene_id = future_to_scene[future]
+                while pending:
 
-                    try:
+                    finished, pending = concurrent.futures.wait(
+                        pending,
+                        timeout=1,
+                        return_when=concurrent.futures.FIRST_COMPLETED
+                    )
 
-                        url = future.result()
+                    for future in finished:
 
-                        st.session_state.videos[scene_id] = url
+                        scene_number, scene_id = future_to_scene[future]
 
-                        successful += 1
+                        try:
 
-                    except Exception as exc:
+                            url = future.result()
 
-                        st.error(f"❌ Scene {scene_number} failed: {exc}")
+                            st.session_state.videos[scene_id] = url
 
-                    done += 1
+                            successful += 1
+
+                        except Exception as exc:
+
+                            st.error(f"❌ Scene {scene_number} failed: {exc}")
+
+                        done += 1
 
                     _update_status()
 
