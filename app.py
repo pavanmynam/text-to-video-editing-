@@ -1,5 +1,7 @@
 import os
 import tempfile
+import time
+import concurrent.futures
 
 import streamlit as st
 
@@ -31,13 +33,19 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 .block-container {
     max-width: 1450px;
     padding-top: 1.2rem;
 }
 
 .hero {
-    padding: 28px;
+    padding: 32px 36px;
     border: 1px solid #2a2a32;
     border-radius: 22px;
     background: linear-gradient(
@@ -46,16 +54,24 @@ st.markdown("""
         #1a1026
     );
     margin-bottom: 20px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+}
+
+.hero h1 {
+    font-weight: 800;
+    letter-spacing: -0.5px;
 }
 
 .badge {
     display: inline-block;
-    padding: 5px 12px;
+    padding: 5px 14px;
     border-radius: 99px;
     background: #5b21b6;
     color: white;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .card {
@@ -72,7 +88,7 @@ st.markdown("""
 }
 
 .generate-box {
-    padding: 20px;
+    padding: 24px;
     border-radius: 18px;
     border: 1px solid #6d28d9;
     background: linear-gradient(
@@ -81,6 +97,68 @@ st.markdown("""
         #0f1020
     );
     margin-top: 15px;
+    box-shadow: 0 14px 40px rgba(109, 40, 217, 0.18);
+}
+
+.final-video-frame {
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #c026d3;
+    background: linear-gradient(135deg, #1c0f2e, #0d0b18);
+    box-shadow: 0 16px 48px rgba(192, 38, 211, 0.22);
+    margin-top: 10px;
+}
+
+/* -- Buttons: premium, consistent, slightly rounded -- */
+.stButton > button, .stDownloadButton > button {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em;
+    padding: 0.6rem 1rem !important;
+    border: 1px solid #2b2b34 !important;
+    transition: transform 0.08s ease, box-shadow 0.15s ease;
+}
+
+.stButton > button:hover, .stDownloadButton > button:hover {
+    transform: translateY(-1px);
+}
+
+button[kind="primary"] {
+    background: linear-gradient(135deg, #7c3aed, #c026d3) !important;
+    border: none !important;
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35) !important;
+}
+
+/* -- Native video player: rounded, bordered, elevated -- */
+div[data-testid="stVideo"] {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #2b2b34;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+div[data-testid="stVideo"] video {
+    border-radius: 16px;
+}
+
+/* -- Metrics -- */
+div[data-testid="stMetric"] {
+    background: #121216;
+    border: 1px solid #2b2b34;
+    border-radius: 14px;
+    padding: 12px 16px;
+}
+
+/* -- Expanders (scene blueprint cards) -- */
+div[data-testid="stExpander"] {
+    border: 1px solid #2b2b34 !important;
+    border-radius: 14px !important;
+    overflow: hidden;
+}
+
+/* -- Sidebar -- */
+section[data-testid="stSidebar"] {
+    border-right: 1px solid #2a2a32;
 }
 
 </style>
@@ -372,7 +450,7 @@ with left:
 
         analyze = st.button(
 
-            "🧠 Analyze with DEEPU",
+            "🧠 Analyze Script",
 
             type="primary",
 
@@ -748,9 +826,21 @@ if st.session_state.plan:
     """, unsafe_allow_html=True)
 
 
+    avg_seconds_per_scene = 60
+
+    eta_seconds = len(scenes) * avg_seconds_per_scene if scenes else 0
+
+    eta_minutes = max(1, round(eta_seconds / 60))
+
+    st.caption(
+        f"⏱️ Estimated time: roughly {eta_minutes} minute(s) for "
+        f"{len(scenes)} scene(s) (AI video generation typically takes "
+        "30–90 seconds per scene)."
+    )
+
     generate_video = st.button(
 
-        "🎬🔥 GENERATE VIDEO",
+        "🎬 Generate AI Video",
 
         type="primary",
 
@@ -821,104 +911,86 @@ if st.session_state.plan:
 
             successful = 0
 
+            done = 0
 
-            for idx, scene in enumerate(scenes):
+            total = len(scenes)
+
+            generation_start = time.time()
+
+            MAX_WORKERS = min(4, total)
+
+            fal_key = secret("FAL_KEY")
 
 
-                scene_number = idx + 1
+            def _update_status():
 
+                elapsed = time.time() - generation_start
 
-                scene_id = scene.get(
+                avg_so_far = elapsed / done if done else avg_seconds_per_scene
 
-                    "id",
+                remaining = max(0, round(avg_so_far * (total - done)))
 
-                    scene_number
-
+                status.info(
+                    f"🎬 Completed {done} / {total} scenes "
+                    f"• running {MAX_WORKERS} in parallel "
+                    f"• elapsed {round(elapsed)}s "
+                    f"• est. remaining ~{remaining}s"
                 )
 
-
-                try:
-
-
-                    status.info(
-
-                        f"""
-
-                        🎬 Generating Scene
-
-                        {scene_number} / {len(scenes)}
-
-                        """
-
-                    )
+                progress.progress(done / total)
 
 
-                    prompt = scene.get(
+            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
 
-                        "kling_prompt",
+                future_to_scene = {}
 
-                        ""
+                for idx, scene in enumerate(scenes):
 
-                    )
+                    scene_number = idx + 1
 
+                    scene_id = scene.get("id", scene_number)
+
+                    prompt = scene.get("kling_prompt", "")
 
                     if not prompt:
 
-                        raise Exception(
+                        st.error(f"❌ Scene {scene_number} failed: Scene prompt is empty.")
 
-                            "Scene prompt is empty."
+                        done += 1
 
-                        )
+                        continue
 
-
-                    url = generate_kling_video(
-
+                    future = executor.submit(
+                        generate_kling_video,
                         prompt,
-
                         duration=duration,
-
                         aspect_ratio=aspect_ratio,
-
-                        fal_key=secret(
-
-                            "FAL_KEY"
-
-                        )
-
+                        fal_key=fal_key
                     )
 
+                    future_to_scene[future] = (scene_number, scene_id)
 
-                    st.session_state.videos[
+                _update_status()
 
-                        scene_id
+                for future in concurrent.futures.as_completed(future_to_scene):
 
-                    ] = url
+                    scene_number, scene_id = future_to_scene[future]
 
+                    try:
 
-                    successful += 1
+                        url = future.result()
 
+                        st.session_state.videos[scene_id] = url
 
-                except Exception as exc:
+                        successful += 1
 
+                    except Exception as exc:
 
-                    st.error(
+                        st.error(f"❌ Scene {scene_number} failed: {exc}")
 
-                        f"""
+                    done += 1
 
-                        ❌ Scene {scene_number} failed:
-
-                        {exc}
-
-                        """
-
-                    )
-
-
-                progress.progress(
-
-                    scene_number / len(scenes)
-
-                )
+                    _update_status()
 
 
             st.session_state.generating = False
@@ -1044,7 +1116,7 @@ if st.session_state.plan:
 
         st.divider()
 
-        st.subheader("🎬 Final Stitched Video")
+        st.subheader("🏆 Official Final Cut")
 
         ordered_urls = [
             st.session_state.videos[scene.get("id", idx + 1)]
@@ -1069,7 +1141,7 @@ if st.session_state.plan:
         )
 
         stitch_clicked = st.button(
-            "🎞️ Combine Scenes Into One Final Video",
+            "🎬 Render Final Video",
             type="primary",
             use_container_width=True,
             key="stitch_button"
@@ -1123,17 +1195,19 @@ if st.session_state.plan:
             and os.path.exists(st.session_state.final_video_path)
         ):
 
-            st.video(st.session_state.final_video_path)
+            with st.container(border=True):
 
-            with open(st.session_state.final_video_path, "rb") as f:
-                st.download_button(
-                    "⬇️ Download Final Video",
-                    data=f.read(),
-                    file_name="cineluxe_final_video.mp4",
-                    mime="video/mp4",
-                    use_container_width=True,
-                    key="download_final_video"
-                )
+                st.video(st.session_state.final_video_path)
+
+                with open(st.session_state.final_video_path, "rb") as f:
+                    st.download_button(
+                        "⬇️ Download Final Video",
+                        data=f.read(),
+                        file_name="cineluxe_final_video.mp4",
+                        mime="video/mp4",
+                        use_container_width=True,
+                        key="download_final_video"
+                    )
 
 
     # ========================================================
